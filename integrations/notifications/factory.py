@@ -9,7 +9,7 @@ def build_notifier(config: AvitoConfig) -> Notifier:
     notifiers = []
 
     if config.tg_token:
-        for _chat_id in config.tg_chat_id:
+        for _chat_id in (config.tg_chat_id or []):
             notifiers.append(TelegramNotifier(bot_token=config.tg_token,
                                               chat_id=_chat_id,
                                               proxy=config.proxy_notifier,
@@ -17,7 +17,7 @@ def build_notifier(config: AvitoConfig) -> Notifier:
                                               ))
 
     if config.vk_token:
-        for _user_id in config.vk_user_id:
+        for _user_id in (config.vk_user_id or []):
             notifiers.append(VKNotifier(vk_token=config.vk_token, user_id=_user_id))
 
     if notifiers:

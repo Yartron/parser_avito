@@ -10,6 +10,10 @@ services:
         #tags:
         #  - localhost/parser_avito:latest
     restart: always
+    # Секретные данные (токены, прокси) можно передавать без правки config.toml:
+    # раскомментируйте строку ниже и заполните .env по образцу .env.example
+    # env_file:
+    #   - .env
     volumes:
        - ./config.toml:/app/config.toml:ro
        - ./cookies.json:/app/cookies.json:Z

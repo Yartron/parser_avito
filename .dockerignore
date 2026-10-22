@@ -1,12 +1,29 @@
+# Секреты и приватные данные — никогда не попадают в образ
+.secrets.txt
 .secret.txt
+.env
+config.local.toml
+
+# Результаты и логи
 result/*
 logs/*
 assets/*
+utils/logs/*
 cookies.json
 state.json
+
+# Служебное
 venv
+.venv
 __pycache__
+.git
+.github
+tests
+docs
 *.bak
 *.bat
+*.md
+.pytest_cache
+.ruff_cache
 database.db
 december.txt
