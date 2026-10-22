@@ -19,6 +19,7 @@ services:
        - ./config.toml:/app/config.toml:ro
        - ./cookies.json:/app/cookies.json:Z
        - ./result:/app/result:Z
+       - ./logs:/app/logs
        - type: bind
          source: database.db
          target: /app/database.db
