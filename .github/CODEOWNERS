@@ -1,0 +1,17 @@
+# Владельцы кода: PR, затрагивающие эти пути, требуют их ревью.
+# Замените ник на актуальный список мейнтейнеров проекта.
+# Формат и синтаксис: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+* @Yartron
+
+# Ядро парсера — только с ревью мейнтейнера ядра
+/parser_cls.py        @Yartron
+/parser/              @Yartron
+/integrations/        @Yartron
+
+# CI/CD и релизы
+/.github/             @Yartron
+
+# Загрузка конфига и секретов — осторожно, это политика безопасности
+/load_config.py       @Yartron
+/utils/env_loader.py  @Yartron

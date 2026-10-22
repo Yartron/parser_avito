@@ -1,0 +1,24 @@
+# Зависимости обновляются автоматически через Dependabot.
+# PR от dependabot открываются с префиксом deps: и проходят тот же CI,
+# что и обычные изменения. Поддержка двух экосистем:
+#   github-actions — версии actions в .github/workflows/*
+#   pip            — пакеты из requirements.txt (включая ruff/pytest по мере появления)
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
