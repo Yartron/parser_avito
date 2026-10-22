@@ -73,7 +73,7 @@ class VKNotifier(Notifier):
             logger.warning(f"VK API error {error_code}: {error_msg}")
             return
 
-        logger.debug(f"Сообщение успешно отправлено")
+        logger.debug("Сообщение успешно отправлено")
 
     def notify(self, ad: Item = None, message: str = None):
         if ad:

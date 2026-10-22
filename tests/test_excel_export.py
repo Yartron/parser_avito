@@ -3,7 +3,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from models import Item, PriceDetailed, Geo
+from models import Item
 from parser.export.excel import ExcelStorage as Excel
 
 

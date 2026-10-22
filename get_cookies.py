@@ -4,7 +4,7 @@ import httpx
 from loguru import logger
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
-from typing import Optional, Dict, List
+from typing import Optional
 
 from dto import Proxy, ProxySplit
 from playwright_setup import ensure_playwright_installed

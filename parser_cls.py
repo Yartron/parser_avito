@@ -92,10 +92,6 @@ class AvitoParse:
     def _api_url_for_page(api_url: str, page: int) -> str:
         parts = urlsplit(api_url)
         query = parse_qsl(parts.query, keep_blank_values=True)
-        page_key = next(
-            (key for key, _ in query if key in {"p", "page"}),
-            "p",
-        )
         query = [(key, value) for key, value in query if key not in {"p", "page"}]
         query.append(("page", str(page)))
         return urlunsplit(
@@ -242,8 +238,6 @@ class AvitoParse:
         html_code = BeautifulSoup(html_code, "html.parser")
         try:
             for _script in html_code.select('script'):
-
-                script_type = _script.get('type')
 
                 if data_type == 'mime':
                     for script in html_code.select('script'):

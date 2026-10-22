@@ -134,7 +134,7 @@ class OwnCookiesProvider(CookiesProvider):
             self.last_cookies = data.get("cookies")
 
             if self.last_cookies:
-                logger.info(f"📂 Загружены собственные cookies с диска")
+                logger.info("📂 Загружены собственные cookies с диска")
             else:
                 logger.warning("Cookies файл есть, но нет cookies в нем")
 
