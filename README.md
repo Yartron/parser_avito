@@ -3,15 +3,15 @@
 **Avito Parser** — инструмент для автоматического мониторинга новых объявлений на Avito с мгновенными уведомлениями (Telegram, VK) и экспортом в Excel. Подходит продавцам, аналитикам и всем, кто следит за ценами и предложениями.
 
 ![CI](https://github.com/Yartron/parser_avito/actions/workflows/ci.yml/badge.svg)
-![Release](https://github.com/Yartron/parser_avito/actions/workflows/release.yml/badge.svg)
 ![Docker image](https://github.com/Yartron/parser_avito/actions/workflows/docker.yml/badge.svg)
+![Deploy](https://img.shields.io/badge/deploy-авто%20по%20тегу-3EA43E)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ED?logo=docker&logoColor=white)
 
 ![Avito Parser GUI](docs/media/gui.gif)
 
 > 📜 Полная [история изменений](docs/CHANGELOG.md) · актуальная версия `3.2.23`
-> Оригинальный проект: [Duff89/parser_avito](https://github.com/Duff89/parser_avito)
+> Оригинальный проект: [Duff89/parser_avito](https://github.com/Duff89/parser_avito) — там же сборки `.exe` для GUI/Windows
 
 ---
 
@@ -24,43 +24,47 @@
 | 📬 Уведомления | Telegram (несколько получателей), VK (несколько получателей), игнорирование просмотренных |
 | 💾 Хранение | Экспорт в Excel (одним файлом или по файлу на ссылку), память о просмотренных объявлениях |
 | 🛡 Обход блокировок | Прокси с автосменой IP, сторонний сервис cookies (spfa), собственные cookies |
-| 🚀 Режимы запуска | GUI (Windows/Linux/macOS), CLI-режим для серверов, Docker 24/7 |
+| 🚀 Режимы запуска | **Docker 24/7 (основной)** и CLI-режим; GUI/Windows-сборки — в [оригинальном проекте](https://github.com/Duff89/parser_avito/releases) |
 
 ---
 
 ## 🚀 Быстрый старт
 
-### Вариант 1: готовый .exe (Windows)
+### 🐳 Docker на сервере (основной режим)
 
-1. Скачай архив со страницы [релизов](https://github.com/Duff89/parser_avito/releases)
-2. Запусти `AvitoParser.exe`
-3. Заполни настройки (уведомления, ссылки Avito)
-4. Нажми **Старт**
+```bash
+# 1. Docker + Compose (Ubuntu/Debian)
+curl -fsSL https://get.docker.com | sudo bash
 
-### Вариант 2: Python (Windows / Linux / macOS)
+# 2. Каталог проекта: скопируй docker-compose.yml и .env.example из репозитория
+mkdir -p /opt/avito && cd /opt/avito
 
-Требуется **Python 3.11+**.
+# 3. Секреты и настройки
+cp .env.example .env && nano .env    # заполни токены (см. раздел ниже)
+# в docker-compose.yml раскомментируй env_file: .env
+
+# 4. Файлы-маунты и запуск
+touch database.db cookies.json
+docker compose pull && docker compose up -d
+docker compose logs -f
+```
+
+Подробный runbook — [docs/DEPLOY.md](docs/DEPLOY.md): настройка `.env`, обновления, авто-деплой, troubleshooting. Базовые сведения о Docker-режиме — [docs/DOCKER.md](docs/DOCKER.md).
+
+### 🐍 Python (Linux/macOS, без GUI)
+
+Требуется **Python 3.11+**:
 
 ```bash
 git clone https://github.com/Yartron/parser_avito.git
 cd parser_avito
-
-pip install -r requirements.txt
-python AvitoParser.py    # режим с графическим интерфейсом
-python parser_cls.py     # серверный режим (без GUI)
+make venv                                # окружение + зависимости (+ pytest, ruff)
+.venv/bin/python parser_cls.py           # серверный CLI-режим
 ```
 
-Нужны только `make`-команды? См. [Makefile](Makefile): `make venv`, `make test`, `make lint`.
-
-### Вариант 3: Docker (сервер, 24/7)
-
-```bash
-cp .env.example .env     # заполни токены (см. раздел ниже)
-touch database.db
-docker-compose up -d
-```
-
-Подробно про серверы, VPS и compose-файл — в [docs/DOCKER.md](docs/DOCKER.md).
+> Нужен графический интерфейс (Windows/macOS/Windows-сборка `.exe`)?
+> Он поддерживается в [оригинальном проекте](https://github.com/Duff89/parser_avito/releases).
+> Этот форк поддерживает только Docker/CLI.
 
 ---
 
@@ -107,10 +111,11 @@ cp .env.example .env     # затем заполни значения
 |---|---|
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | История изменений |
 | [docs/DOCS.md](docs/DOCS.md) | Как устроен код, точки расширения (для разработчиков) |
-| [docs/CI.md](docs/CI.md) | CI/CD: проверки, релизы exe и Docker-образов |
+| [docs/CI.md](docs/CI.md) | CI/CD: проверки, Docker-образ, авто-деплой |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Сервер 24/7: установка, обновления, авто-деплой, troubleshooting |
 | [docs/ANTIBLOCK.md](docs/ANTIBLOCK.md) | Обход блокировок: прокси, cookies, spfa |
 | [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | Настройка Telegram и VK-уведомлений |
-| [docs/DOCKER.md](docs/DOCKER.md) | Docker, VPS, фоновый 24/7 режим |
+| [docs/DOCKER.md](docs/DOCKER.md) | База по Docker-режиму (Makefile, compose, VPS) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Руководство для соавторов: окружение, процесс, PR |
 
 ---
@@ -126,6 +131,20 @@ make lint    # ruff check . — линтер (конфиг в ruff.toml)
 CI на каждый PR автоматически проверяет: линтер → тесты (Python 3.11 и 3.12) → сборку Docker-образа ([docs/CI.md](docs/CI.md)).
 
 Хочешь добавить уведомления, новый экспорт или способ работы с cookies? Точки расширения описаны в [docs/DOCS.md](docs/DOCS.md), процесс для соавторов — в [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+## 🚀 Как выкатывается релиз (для деплоя)
+
+```bash
+# 1. version.py + docs/CHANGELOG.md → PR → CI → merge в master
+# 2. Публикация образа и деплой:
+git tag v3.2.24 && git push origin v3.2.24
+# → docker.yml соберёт образ ~15-20 мин
+# → deploy.yml сам выкатит его на сервер (если настроены SSH-секреты)
+```
+
+Схема пайплайна и все варианты — [docs/CI.md](docs/CI.md), серверная часть — [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ---
 

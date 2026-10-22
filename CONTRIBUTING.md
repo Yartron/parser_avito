@@ -153,9 +153,10 @@ git push -u origin fix/#300-incremental-save
 
 Релизный процесс описан в [docs/CI.md](docs/CI.md). Кратко:
 
-1. Обнови `docs/CHANGELOG.md` и `version.py` (`VERSION = "x.y.z"`) — PR'ом `feat/x.y.z version`.
-2. Merge в `master` → workflow `release.yml` соберёт Windows `.exe` и создаст GitHub Release.
-3. `git tag vX.Y.Z && git push origin vX.Y.Z` → workflow `docker.yml` соберёт и опубликует Docker-образ `ghcr.io/<owner>/parser_avito:x.y.z`.
+1. Обнови `docs/CHANGELOG.md` и `version.py` (`VERSION = "x.y.z"`) — PR'ом `feat/x.y.z`.
+2. После merge в `master`: `git tag vX.Y.Z && git push origin vX.Y.Z` → workflow `docker.yml` соберёт и опубликует Docker-образ `ghcr.io/<owner>/parser_avito:x.y.z`.
+3. Workflow `deploy.yml` сам выкатит образ на сервер (нужны SSH-секреты — см. [docs/DEPLOY.md](docs/DEPLOY.md)); без них руками: `docker compose pull && docker compose up -d`.
+4. exe-релизы GUI-версии — оригинальному проекту [Duff89/parser_avito](https://github.com/Duff89/parser_avito/releases); в форке они не собираются.
 
 ---
 

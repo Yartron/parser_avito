@@ -23,7 +23,7 @@ else
 	VENV_ACTIVATE := $(VENV)/bin/activate
 endif
 
-.PHONY: build run restart stop logs shell clean rebuild test lint lintfix venv
+.PHONY: build run restart stop logs shell clean rebuild update test lint lintfix venv
 
 # 🏗️ Сборка Docker-образа
 build:
@@ -68,6 +68,12 @@ venv:
 	@$(VENV_BIN)/$(PYTHON) -m pip install --upgrade pip
 	@$(VENV_BIN)/python -m pip install -r requirements.txt pytest ruff
 	@echo Виртуальное окружение готово: source .venv/bin/activate (Linux/macOS) или .venv\\Scripts\\activate (Windows)
+
+# 🚀 Выкат новой версии (pull + рестарт контейнера)
+update:
+	docker compose pull
+	docker compose up -d --remove-orphans
+	@echo Deployed.
 
 # ✅ Запуск тестов (в venv, если он есть)
 test:

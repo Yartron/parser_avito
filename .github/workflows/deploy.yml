@@ -1,0 +1,87 @@
+# Автоматический деплой на сервер после публикации Docker-образа.
+#
+# Логика: тег vX.Y.Z -> docker.yml собирает и публикует образ ->
+#         по завершении этой workflow запускается деплой по SSH:
+#         сервер делает docker compose pull && docker compose up -d.
+#
+# Разовый шаг настройки — секреты репозитория (Settings → Secrets → Actions):
+#   SSH_HOST   — IP/адрес сервера
+#   SSH_USER   — пользователь (обычно root или docker-пользователь)
+#   SSH_KEY    — приватный ключ (id_ed25519), публичный — в authorized_keys сервера
+# не обязательно:
+#   DEPLOY_DIR — каталог проекта на сервере (по умолчанию /opt/avito)
+#
+# Ручной запуск (workflow_dispatch) деплоит тег latest.
+# Без секретов задание упадёт с понятной ошибкой-подсказкой — это нормально,
+# секреты настраиваются один раз.
+
+name: Deploy to server
+
+on:
+  workflow_dispatch:
+
+  # Автоматически после успешной сборки образа (docker.yml)
+  workflow_run:
+    workflows: ["Build and Release AvitoParser docker image"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # Для workflow_run пропускаем прогоны с неудачной сборкой образа
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      # Версия без "v": из тега сборки (v3.2.24 -> 3.2.24), вручную — latest
+      IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && 'latest' || 'unset' }}
+      DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || '/opt/avito' }}
+    steps:
+      - name: Определить версию образа
+        if: ${{ env.IMAGE_TAG == 'unset' }}
+        run: |
+          tag="${{ github.event.workflow_run.head_branch }}"
+          echo "IMAGE_TAG=$(echo "$tag" | sed 's/^v//')" >> "$GITHUB_ENV"
+
+      - name: Проверить секреты деплоя
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          missing=""
+          [ -z "$SSH_HOST" ] && missing="$missing SSH_HOST"
+          [ -z "$SSH_USER" ] && missing="$missing SSH_USER"
+          [ -z "$SSH_KEY" ]  && missing="$missing SSH_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Не заданы секреты деплоя:$missing"
+            echo "Настройте их в репозитории: Settings → Secrets and variables → Actions → New repository secret:"
+            echo "  gh secret set SSH_HOST --body 'IP_сервера'"
+            echo "  gh secret set SSH_USER --body 'root'"
+            echo "  gh secret set SSH_KEY < ~/.ssh/id_ed25519"
+            echo "Подробности — docs/DEPLOY.md"
+            exit 1
+          fi
+
+      - name: Деплой (docker compose pull && up -d)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: DEPLOY_DIR,IMAGE_TAG
+          script: |
+            set -e
+            cd "$DEPLOY_DIR"
+            echo "==> Деплой образа ghcr.io/yartron/parser_avito:$IMAGE_TAG в $DEPLOY_DIR"
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
+            sleep 3
+            echo "==> Статус контейнеров:"
+            docker compose ps
+            echo "==> Последние логи парсера:"
+            docker compose logs --tail=30 parser_avito

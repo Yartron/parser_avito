@@ -1,6 +1,24 @@
 # История изменений
 
-Все заметные изменения будут документироваться в этом файле. 
+Все заметные изменения будут документироваться в этом файле.
+
+## Изменения форка (инфраструктура, версия VERSION не меняются)
+
+### 2026-10-22
+#### Добавлено
+- CI: `ci.yml` — линтер ruff, тесты на Python 3.11/3.12, проверка сборки Docker-образа на каждый PR/push
+- Автоматический деплой: `deploy.yml` — после публикации образа по тегу сервер сам делает `docker compose pull && up -d` (SSH-секреты настраиваются один раз, см. docs/DEPLOY.md)
+- Поддержка `.env` для секретов (VK_TOKEN, VK_ID, TG_TOKEN, прокси и др.) — переопределяют `config.toml`
+- Dependabot (github-actions + pip), шаблон PR, CODEOWNERS, CONTRIBUTING.md, docs/CI.md, docs/DEPLOY.md
+- Цели Makefile: `make venv | test | lint | lintfix | update`
+
+#### Изменено
+- `requirements.txt` перекодирован из UTF-16 в UTF-8
+- `docker-compose.yml` тянет образ форка `ghcr.io/yartron/parser_avito` c параметризуемым тегом (`IMAGE_TAG`)
+- README переработан: основной режим — Docker/сервер
+
+#### Удалено
+- Workflow сборки `.exe` (Windows GUI) — GUI-сборка поддерживается только в оригинальном проекте
 
 ### [3.2.23] - 2026-09-30
 #### Добавлено

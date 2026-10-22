@@ -5,24 +5,28 @@
 Что и когда запускается:
 
 ```
-                       ┌──────────────────────────────────────────────┐
+                        ┌──────────────────────────────────────────────┐
   PR / push в master ─►│  ci.yml                                      │
                        │   • lint         → ruff check .              │
                        │   • tests        → pytest, Python 3.11/3.12  │
                        │   • docker-build → сборка образа (без push)  │
                        └──────────────────────────────────────────────┘
 
-  push в master ──────►  release.yml: если версия ещё не релизилась —
-                         собирает AvitoParser.exe (PyInstaller) и
-                         создаёт GitHub Release v<версия>
-
   тег vX.Y.Z ─────────►  docker.yml: собирает и публикует образ
                          ghcr.io/<owner>/parser_avito:<версия> (+ latest)
                          для linux/amd64 и linux/arm64
+                               │
+                               ▼  (после success)
+                         deploy.yml: SSH на сервер →
+                         docker compose pull && docker compose up -d
 
   понедельник ────────►  dependabot.yml: PR с обновлениями
                          github-actions и pip-зависимостей
 ```
+
+> Примечание: workflow релиза `.exe` (PyInstaller/Windows) удалён из форка —
+> этот режим не поддерживается: GUI/Windows-сборки живут в оригинальном
+> [Duff89/parser_avito](https://github.com/Duff89/parser_avito/releases).
 
 ---
 
@@ -45,16 +49,23 @@
 
 ## release.yml — Релиз .exe (Windows)
 
-**Триггер:** push в `master`.
+> ❌ **Удалён из форка.** GUI/Windows не поддерживаются, exe-сборки есть
+> в оригинальном [Duff89/parser_avito/releases](https://github.com/Duff89/parser_avito/releases).
+> История: push в master запускал PyInstaller-сборку, версионированную по `version.py`.
 
-Порядок работы:
-1. Читает версию из `version.py` (`VERSION = "x.y.z"`).
-2. Через GitHub API проверяет, существует ли уже Release с тегом `v<версия>`; если да — завершается (идемпотентно: повторный push без бампа версии ничего не собирает).
-3. Устанавливает зависимости + PyInstaller.
-4. Собирает `AvitoParser.exe` (`--onefile --noconsole`, иконка `assets/logo.ico`, в комплект кладётся `config.toml`).
-5. Упаковывает ZIP и создаёт GitHub Release `v<версия>` с файлом.
+---
 
-Ключевое: **релиз управляется версией в файле**. Merge в `master` с новым `version.py` = новый релиз.
+## deploy.yml — Автоматический деплой на сервер
+
+**Триггеры:** успешное завершение `docker.yml` (после публикации образа по тегу), а также ручной запуск (`workflow_dispatch`, деплоит `latest`).
+
+Шаги:
+1. Проверка секретов: `SSH_HOST`, `SSH_USER`, `SSH_KEY` (не заданы → джоб падает с инструкцией по настройке).
+2. Вычисление версии образа из тега сборки (`v3.2.24` → `3.2.24`); неопциональный секрет `DEPLOY_DIR` (по умолчанию `/opt/avito`).
+3. SSH (appleboy/ssh-action@v1): `cd $DEPLOY_DIR && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f` + вывод статуса и хвоста логов.
+4. Версия образа пробрасывается в compose через `IMAGE_TAG` — выкатывается ровно та версия, которую собрал релизный тег, а не «последний опубликованный latest».
+
+Сетап SSH-ключа и секретов — в [DEPLOY.md](DEPLOY.md), раздел 3.
 
 ---
 
@@ -83,23 +94,22 @@ git push -u origin feat/x.y.z
 # → открыть PR, дождаться зелёного CI, смержить в master
 ```
 
-### 2. Собрать exe
-
-После merge в `master` с бампнутой версией `release.yml` соберёт и опубликует релиз автоматически. Проверь вкладку **Releases** и историю запусков в **Actions**.
-
-### 3. Собрать Docker-образ
+### 2. Собрать Docker-образ и выкатить на сервер
 
 ```bash
 git pull origin master
 git tag vX.Y.Z
-git push origin vX.Y.Z     # → docker.yml запускается и публикует образ
+git push origin vX.Y.Z
+# → docker.yml соберёт и опубликует образ (~15-20 мин)
+# → deploy.yml автодеплой (если настроены SSH-секреты, иначе вручную:
+#   на сервере: cd /opt/avito && docker compose pull && docker compose up -d)
 ```
 
-### 4. Проверить результат
+### 3. Проверить результат
 
-- Release появился с файлом `AvitoParser_x.y.z.zip`
 - Образ обновился в [пакетах GitHub](https://github.com/Yartron/parser_avito/pkgs/container/parser_avito)
 - Быстрая проверка: `docker pull ghcr.io/<owner>/parser_avito:x.y.z`
+- Если включен авто-деплой — `gh run list` покажет зелёный `Deploy to server`, на сервере `docker compose ps` — свежая версия
 
 ---
 
