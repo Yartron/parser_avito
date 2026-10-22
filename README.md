@@ -10,7 +10,7 @@
 
 ![Avito Parser GUI](docs/media/gui.gif)
 
-> 📜 Полная [история изменений](docs/CHANGELOG.md) · актуальная версия `3.2.23`
+> 📜 Полная [история изменений](docs/CHANGELOG.md) · актуальная версия `3.2.24`
 > Оригинальный проект: [Duff89/parser_avito](https://github.com/Duff89/parser_avito) — там же сборки `.exe` для GUI/Windows
 
 ---
